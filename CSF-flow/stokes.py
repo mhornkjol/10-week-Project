@@ -99,5 +99,5 @@ pfile_pvd = File("Plot/stokes/pressure.pvd")
 pfile_pvd << p
 
 # Save velocity
-with XDMFFile(MPI.comm_world, '../Diffusion-Convection/velocity.xdmf') as xdmf:
+with XDMFFile(MPI.comm_world, '../diffusion-convection/velocity.xdmf') as xdmf:
     xdmf.write_checkpoint(u, "velocity", 0, append=True)
