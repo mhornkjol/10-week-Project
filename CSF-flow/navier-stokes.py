@@ -17,7 +17,7 @@ brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
 subdomain = brain - aquaduct - inside
 domain.set_subdomain(1, subdomain)
 mesh = generate_mesh(domain, meshSize)
-print(mesh.hmax())
+
 # Build function space
 V = VectorFunctionSpace(mesh, "Lagrange", 2)
 Q = FunctionSpace(mesh, "Lagrange", 1)
@@ -35,7 +35,7 @@ bc1 = DirichletBC(V, noslip, "near(x[1], 0.1) && (x[0] < 0.01 || (0.03 < x[0] &&
 
 # Inflow from ventricle
 inflow = Constant((0.0, -0.000003)) # 3 micrometer/s corresponding to 0.5 L/day flow
-bc2 = DirichletBC(V, inflow, "near(x[1], 0.055) && (0.04 < x[0] && x[0] < 0.06)")
+bc2 = DirichletBC(V, inflow, "near(x[1], 0.054) && (0.045 < x[0] && x[0] < 0.055)")
 
 # Collect boundary conditions
 bcu = [bc0, bc1, bc2]
