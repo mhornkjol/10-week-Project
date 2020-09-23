@@ -122,7 +122,7 @@ A = M_lumped + A
 L = (u_n + dt*f)*v*dx
 
 # Define vtk file
-vtkfile = File('Diffusion two domains/solution.pvd')
+vtkfile = File('Diffusion two domains robin plot/solution.pvd')
 
 # Time-stepping
 u = Function(V)
