@@ -22,15 +22,15 @@ else:
     exit()
 
 # Load mesh
-meshSize = 128
+meshSize = 64
 domain = Rectangle(Point(0, 0), Point(0.1, 0.1))
 aquaduct = Rectangle(Point(0.045, 0.01), Point(0.055, 0.045))
 inside = Rectangle(Point(0.04, 0.045), Point(0.06, 0.055))
 brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
-hypocampus = Rectangle(Point(0.040,0.01), Point(0.045, 0.045))
-subdomain = brain - aquaduct - inside -hypocampus
+# hypocampus = Rectangle(Point(0.040,0.01), Point(0.045, 0.045))
+subdomain = brain - aquaduct - inside #- hypocampus
 domain.set_subdomain(1, subdomain)
-domain.set_subdomain(2, hypocampus)
+# domain.set_subdomain(2, hypocampus)
 mesh = generate_mesh(domain, meshSize)
 
 # Build function space

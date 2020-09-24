@@ -6,21 +6,21 @@ from mshr import *
 set_log_level(30)
 
 
-T = 3600*24*3 # final time
+T = 3*3600*24 # final time
 num_steps = 200  # number of time steps
 dt = T / num_steps  # time step size
 D = 1.2*10**(-8) # Diffusion coefficient
 
 # Create mesh and define function space
-meshSize = 128
+meshSize = 64
 domain = Rectangle(Point(0, 0), Point(0.1, 0.1))
 aquaduct = Rectangle(Point(0.045, 0.01), Point(0.055, 0.045))
 inside = Rectangle(Point(0.04, 0.045), Point(0.06, 0.055))
 brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
-hypocampus = Rectangle(Point(0.040,0.01), Point(0.045, 0.045))
-subdomain = brain - aquaduct - inside - hypocampus
+# hypocampus = Rectangle(Point(0.040,0.01), Point(0.045, 0.045))
+subdomain = brain - aquaduct - inside #- hypocampus
 domain.set_subdomain(1, subdomain)
-domain.set_subdomain(2, hypocampus)
+# domain.set_subdomain(2, hypocampus)
 mesh = generate_mesh(domain, meshSize)
 V = FunctionSpace(mesh, 'P', 1)
 O = VectorFunctionSpace(mesh, 'CG', 2)
@@ -45,8 +45,8 @@ dx = Measure('dx', domain=mesh, subdomain_data=markers)
 bc_bottom_wall = DirichletBC(V, Constant(1.0), "near(x[1],0)")
 bcs = [bc_bottom_wall]
 
+# Load velcity from .xdmf file
 u = Function(O)
-
 with XDMFFile(MPI.comm_world, "./velocity.xdmf") as xdmf:
     xdmf.read_checkpoint(u, "velocity", 0)
 
@@ -70,7 +70,7 @@ A = M_lumped + A
 L = c_n*v*dx
 
 # Define vtk file
-vtkfile = File('Plot/solution.pvd')
+vtkfile = File('diffusion-convection plots/solution.pvd')
 
 normal = FacetNormal(mesh)
 
