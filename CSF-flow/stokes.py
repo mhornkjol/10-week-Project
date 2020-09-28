@@ -40,8 +40,8 @@ TH = P2 * P1
 W = FunctionSpace(mesh, TH)
 
 # Viscosity inside and outside brain
-mu1 = 1
-mu2 = 1000
+mu1 = 7.9*10**(-4)
+mu2 = 1000*mu1
 
 # No-slip boundary condition for velocity on sides and bottom
 noslip = Constant((0.0, 0.0))
@@ -93,9 +93,9 @@ solver.solve(U.vector(), bb)
 # Get sub-functions
 u, p = U.split(deepcopy=True)
 # Save solution in VTK format
-ufile_pvd = File("Plot/stokes/velocity.pvd")
+ufile_pvd = File("Stokes plots/velocity.pvd")
 ufile_pvd << u
-pfile_pvd = File("Plot/stokes/pressure.pvd")
+pfile_pvd = File("Stokes plots/pressure.pvd")
 pfile_pvd << p
 
 # Save velocity

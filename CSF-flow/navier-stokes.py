@@ -35,7 +35,7 @@ bc1 = DirichletBC(V, noslip, "near(x[1], 0.1) && (x[0] < 0.01 || (0.03 < x[0] &&
 
 # Inflow from ventricle
 inflow = Constant((0.0, -0.000003)) # 3 micrometer/s corresponding to 0.5 L/day flow
-bc2 = DirichletBC(V, inflow, "near(x[1], 0.054) && (0.045 < x[0] && x[0] < 0.055)")
+bc2 = DirichletBC(V, inflow, "near(x[1], 0.055) && (0.045 < x[0] && x[0] < 0.055)")
 
 # Collect boundary conditions
 bcu = [bc0, bc1, bc2]
@@ -77,8 +77,8 @@ A3 = assemble(a3)
 
 
 # Create files for storing solution
-ufile = File("navier-stokes/velocity.pvd")
-pfile = File("navier-stokes/pressure.pvd")
+ufile = File("Navier-Stokes plots/velocity.pvd")
+pfile = File("Navier-Stokes plots/pressure.pvd")
 
 # Time-stepping
 t = dt
@@ -86,7 +86,7 @@ i = 0
 
 while t < T + DOLFIN_EPS:
     print("%e: %e" %(dt, u_.vector().max()*mesh.hmax()))
-    #print("step %d of %d" %(i, num_steps))
+    # print("step %d of %d" %(i, num_steps))
     i += 1
     
     # Update pressure boundary condition
