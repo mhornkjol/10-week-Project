@@ -22,7 +22,7 @@ else:
          "Krylov subspace method. Terminating.")
     exit()
 
-# Load mesh
+# Create mesh
 meshSize = 64
 domain = Rectangle(Point(0, 0), Point(0.1, 0.1))
 aquaduct = Rectangle(Point(0.045, 0.01), Point(0.055, 0.045))
@@ -32,8 +32,7 @@ subdomain = brain - aquaduct - inside
 domain.set_subdomain(1, subdomain)
 mesh = generate_mesh(domain, meshSize)
 plot(mesh)
-plt.savefig("mesh.png", bbox_inches='tight')
-plt.show()
+plt.savefig("../Figures/mesh.png", bbox_inches='tight')
 
 # Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)

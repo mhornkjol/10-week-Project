@@ -8,7 +8,7 @@ set_log_level(30)
 
 
 T = 3*3600*24 # final time
-num_steps = 3000 # number of time steps
+num_steps = 1000 # number of time steps
 dt = T / num_steps # time step size
 D = 1.2*10**(-8) # Diffusion coefficient
 
@@ -49,7 +49,8 @@ dx = Measure('dx', domain=mesh, subdomain_data=markers)
 
 # Define boundary condition
 bc_bottom_wall = DirichletBC(V, Constant(1.0), "near(x[1],0)")
-bcs = [bc_bottom_wall]
+bc_ag = DirichletBC(V, Constant(0.0), "near(x[1], 0.1) && ((x[0] > 0.01 && 0.04 > x[0]) || (x[0] > 0.065 && 0.085 > x[0]))")
+bcs = [bc_bottom_wall, bc_ag]
 
 # Load velcity from .xdmf file
 u = Function(O)
@@ -80,7 +81,7 @@ A = M_lumped + A
 L = c_n*v*dx
 
 # Define vtk file
-vtkfile = File('diffusion-convection plots/solution.pvd')
+vtkfile = File('diffusion-convection ag bc plots/solution.pvd')
 
 
 # Time-stepping
@@ -92,7 +93,7 @@ y = np.zeros(num_steps)
 x = np.zeros(num_steps)
 for i in range(num_steps):
     if(t>=600 and flag==True):
-        bcs = []
+        bcs = [bc_ag]
         A = assemble(a2)
         A = M_lumped + A
         flag = False
@@ -141,18 +142,18 @@ for i in range(len(x)):
         flat_end_time = x[i-1]
         flag2 = False
     
-    if(y[i]/max_tracer < 1/2 and flag3):
+    if(y[i]/max_tracer < 1/2 and flag3 and ((i/num_steps)*dt)>600):
         one_half_value = y[i]
         one_half_time = x[i]
         flag3 = False
 
-    if(y[i]/max_tracer < 1/10 and flag4):
+    if(y[i]/max_tracer < 1/10 and flag4 and ((i/num_steps)*dt)>600):
         one_tenth_value = y[i]
         one_tenth_time = x[i]
         flag4 = False
     
 
-with open('values.txt', 'w') as f:
+with open('values_ag_bc.txt', 'w') as f:
     f.write('Flat start value: {}\nFlat start time: {}\n\nFlat end value: {}\nFlat end time: {}\n\nOne half value: {}\nOne half time: {}\n\nOne tenth value: {}\nOne tenth time: {}'.format(flat_start_value, \
         flat_start_time,flat_end_value,flat_end_time, \
         one_half_value, one_half_time, one_tenth_value, one_tenth_time))
@@ -163,5 +164,5 @@ plt.figure()
 plt.xlabel("Time [s]", fontsize=12)
 plt.ylabel('Amount of tracer [arbitrary units]', fontsize=12)
 plt.plot(x,y)
-plt.savefig("../Figures/tracer_amount_plot.png", bbox_inches='tight')
+plt.savefig("../Figures/tracer_amount_ag_bc_plot.png", bbox_inches='tight')
 plt.show()
