@@ -1,6 +1,7 @@
 from dolfin import *
 from fenics import *
 from mshr import *
+import matplotlib.pyplot as plt
 
 # Test for PETSc or Tpetra
 if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Tpetra"):
@@ -27,11 +28,12 @@ domain = Rectangle(Point(0, 0), Point(0.1, 0.1))
 aquaduct = Rectangle(Point(0.045, 0.01), Point(0.055, 0.045))
 inside = Rectangle(Point(0.04, 0.045), Point(0.06, 0.055))
 brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
-# hypocampus = Rectangle(Point(0.040,0.01), Point(0.045, 0.045))
-subdomain = brain - aquaduct - inside #- hypocampus
+subdomain = brain - aquaduct - inside
 domain.set_subdomain(1, subdomain)
-# domain.set_subdomain(2, hypocampus)
 mesh = generate_mesh(domain, meshSize)
+plot(mesh)
+plt.savefig("mesh.png", bbox_inches='tight')
+plt.show()
 
 # Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -48,9 +50,9 @@ noslip = Constant((0.0, 0.0))
 bc0 = DirichletBC(W.sub(0), noslip, "near(x[0], 0.1) || near(x[0], 0) || near(x[1], 0)")
 
 # Top boundary condition excluding AG
-bc1 = DirichletBC(W.sub(0), noslip, "near(x[1], 0.1) && (x[0] < 0.01 || (0.03 < x[0] && x[0] < 0.04) || (0.06 < x[0] && x[0] < 0.07) || 0.09 < x[0])")
+bc1 = DirichletBC(W.sub(0), noslip, "near(x[1], 0.1) && (x[0] < 0.01 || (0.04 < x[0] && x[0] < 0.065) || 0.085 < x[0])")
 
-# Inflow from ventricle
+# Inflow from Choroid Plexus
 inflow = Constant((0.0, -0.000003)) # 3 micrometer/s corresponding to 0.5 L/day flow
 bc2 = DirichletBC(W.sub(0), inflow, "near(x[1], 0.055) && (0.04 < x[0] && x[0] < 0.06)")
 
