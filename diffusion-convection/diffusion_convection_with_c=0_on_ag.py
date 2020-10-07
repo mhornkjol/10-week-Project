@@ -8,7 +8,7 @@ set_log_level(30)
 
 
 T = 3*3600*24 # final time
-num_steps = 1000 # number of time steps
+num_steps = 3000 # number of time steps
 dt = T / num_steps # time step size
 D = 1.2*10**(-8) # Diffusion coefficient
 
@@ -89,9 +89,12 @@ c = Function(V)
 t = 0
 flag = True
 
-y = np.zeros(num_steps)
-x = np.zeros(num_steps)
+tracer_total = np.zeros(num_steps)
+tracer_SAS = np.zeros(num_steps)
+tracer_brain = np.zeros(num_steps)
+time = np.zeros(num_steps)
 for i in range(num_steps):
+    # Turn of tracer injection after 10 min
     if(t>=600 and flag==True):
         bcs = [bc_ag]
         A = assemble(a2)
@@ -103,66 +106,65 @@ for i in range(num_steps):
     [bc.apply(A, b) for bc in bcs]
     solve(A, c.vector(), b)
 
-    # Plot solution
+    # Save solution
     vtkfile << (c, t)
 
     # Update previous solution
     c_n.assign(c)
 
-    #Concentration vector
-    y[i] = assemble(c_n*dx)
-    x[i] = t
+    #total tracer amount at times vector
+    tracer_total[i] = assemble(c_n*dx)
+    tracer_SAS[i] = assemble(c_n*dx(0))
+    tracer_brain[i] = assemble(c_n*dx(1))
+    time[i] = t
 
     t += dt
 
-# Extract some usefull values
-# Find start and end of flat section
-# Find time of 1/2 left and 1/10 left of max tracer
-flag1 = True
-flag2 = True
-flag3 = True
-flag4 = True
-max_tracer = max(y)
-flat_start_value = 0
-flat_start_time = 0
-flat_end_value = 0
-flat_end_time = 0
-one_half_value = 0
-one_half_time = 0
-one_tenth_value = 0
-one_tenth_time = 0
-for i in range(len(x)):
-    if((y[i]-y[i-1]) < DOLFIN_EPS and flag1):
-        flat_start_value = y[i-1]
-        flat_start_time = x[i-1]
-        flag1 = False
+# Extract some usefull values and save then in txt files
+# Find time of 1/2 left and 1/10 left of max tracer for total, SAS and brain
 
-    if((y[i]+DOLFIN_EPS)<y[i-1] and flag2):
-        flat_end_value = y[i-1]
-        flat_end_time = x[i-1]
-        flag2 = False
+tracer_domains = [tracer_total, tracer_SAS, tracer_brain]
+tracer_domains_names = ["tracer_total", "tracer_SAS", "tracer_brain"]
+j = 0
+for tracer in tracer_domains:
+    flag1 = True
+    flag2 = True
+
+    one_half_value = 0
+    one_half_time = 0
+    one_tenth_value = 0
+    one_tenth_time = 0
+    for i in range(len(time)):
+        if(tracer[i]/max(tracer) < 1/2 and flag1 and time[i]>600):
+            one_half_value = tracer[i]/max(tracer)
+            one_half_time = time[i]/3600
+            flag1 = False
+
+        if(tracer[i]/max(tracer) < 1/10 and flag2 and time[i]>600):
+            one_half_value = tracer[i]/max(tracer)
+            one_half_time = time[i]/3600
+            flag2 = False
+        
+    with open('values_ag_bc_{}.txt'.format(tracer_domains_names[j]), 'w') as f:
+        f.write('One half value: {}\nOne half time: {}\n\nOne tenth value: {}\nOne tenth time: {}'.format(one_half_value, \
+            one_half_time, one_tenth_value, one_tenth_time))
     
-    if(y[i]/max_tracer < 1/2 and flag3 and ((i/num_steps)*dt)>600):
-        one_half_value = y[i]
-        one_half_time = x[i]
-        flag3 = False
-
-    if(y[i]/max_tracer < 1/10 and flag4 and ((i/num_steps)*dt)>600):
-        one_tenth_value = y[i]
-        one_tenth_time = x[i]
-        flag4 = False
-    
-
-with open('values_ag_bc.txt', 'w') as f:
-    f.write('Flat start value: {}\nFlat start time: {}\n\nFlat end value: {}\nFlat end time: {}\n\nOne half value: {}\nOne half time: {}\n\nOne tenth value: {}\nOne tenth time: {}'.format(flat_start_value, \
-        flat_start_time,flat_end_value,flat_end_time, \
-        one_half_value, one_half_time, one_tenth_value, one_tenth_time))
+    j += 1
 
 
+# Plot the tracer amount for the total domain, the SAS and the brain
+# Change time units to hours and normalize so max tracer amount is 1
+time = time/3600
+tracer_total_scaled = tracer_total/max(tracer_total)
+tracer_SAS_scaled = tracer_SAS/max(tracer_total)
+tracer_brain_scaled = tracer_brain/max(tracer_total)
 
 plt.figure()
-plt.xlabel("Time [s]", fontsize=12)
+plt.xlabel("Time [hours]", fontsize=12)
 plt.ylabel('Amount of tracer [arbitrary units]', fontsize=12)
-plt.plot(x,y)
+plt.plot(time, tracer_total_scaled, label="Total tracer amount")
+plt.plot(time, tracer_SAS_scaled, label="Tracer amount in the SAS")
+plt.plot(time, tracer_brain_scaled, label="Tracer amount in the brain")
+plt.legend()
 plt.savefig("../Figures/tracer_amount_ag_bc_plot.png", bbox_inches='tight')
 plt.show()

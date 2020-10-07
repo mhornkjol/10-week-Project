@@ -3,12 +3,14 @@ import matplotlib.pyplot as plt
 from mshr import *
 import numpy as np
 
+#! WARNING: This code is not functioning properly
+
 # Set log level to only show warnings or worse
 set_log_level(30)
 
 
 T = 3*3600*24 # final time
-num_steps = 3000 # number of time steps
+num_steps = 300 # number of time steps
 dt = T / num_steps # time step size
 D = 1.2*10**(-8) # Diffusion coefficient
 
@@ -75,8 +77,8 @@ M_lumped = assemble(mass_form)
 M_lumped.zero()
 M_lumped.set_diagonal(assemble(mass_action_form))
 
-a1 = - dt*inner(c*u, grad(v))*dx + D*dt*inner(grad(c), grad(v))*dx + dt*inner(c*dot(u,n), v)*ds(0) + dt*inner(c*dot(u,n), v)*ds(1)
-a2 = - dt*inner(c*u, grad(v))*dx + D*dt*inner(grad(c), grad(v))*dx + dt*inner(c*dot(u,n), v)*ds(1)
+a1 = - dt*inner(c*u, grad(v))*dx(0) + D*dt*inner(grad(c), grad(v))*dx(0) - dt*inner(c*u, grad(v))*dx(1) + D*dt*inner(grad(c), grad(v))*dx(1) - dt*inner(c*u, grad(v))*dx(2) + D*dt*inner(grad(c), grad(v))*dx(2) + dt*inner(c*dot(u,n), v)*ds(0) + dt*inner(c*dot(u,n), v)*ds(1)
+a2 = - dt*inner(c*u, grad(v))*dx(0) + D*dt*inner(grad(c), grad(v))*dx(0) - dt*inner(c*u, grad(v))*dx(1) + D*dt*inner(grad(c), grad(v))*dx(1) - dt*inner(c*u, grad(v))*dx(2) + D*dt*inner(grad(c), grad(v))*dx(2) + dt*inner(c*dot(u,n), v)*ds(1)
 A = assemble(a1)
 A = M_lumped + A
 L = c_n*v*dx
@@ -90,8 +92,10 @@ c = Function(V)
 t = 0
 flag = True
 
-y = np.zeros(num_steps)
-x = np.zeros(num_steps)
+tracer_total = np.zeros(num_steps)
+tracer_hippocampus = np.zeros(num_steps)
+time = np.zeros(num_steps)
+# Turn of tracer injection after 10 min
 for i in range(num_steps):
     if(t>=600 and flag==True):
         bcs = []
@@ -111,59 +115,54 @@ for i in range(num_steps):
     c_n.assign(c)
 
     #Concentration vector
-    y[i] = assemble(c_n*dx(2))
-    x[i] = t
+    tracer_total[i] = assemble(c_n*dx)
+    tracer_hippocampus[i] = assemble(c_n*dx(2))
+    time[i] = t
 
     t += dt
 
-# Extract some usefull values
-# Find start and end of flat section
-# Find time of 1/2 left and 1/10 left of max tracer
-flag1 = True
-flag2 = True
-flag3 = True
-flag4 = True
-max_tracer = max(y)
-flat_start_value = 0
-flat_start_time = 0
-flat_end_value = 0
-flat_end_time = 0
-one_half_value = 0
-one_half_time = 0
-one_tenth_value = 0
-one_tenth_time = 0
-for i in range(len(x)):
-    if((y[i]-y[i-1]) < DOLFIN_EPS and flag1):
-        flat_start_value = y[i-1]
-        flat_start_time = x[i-1]
-        flag1 = False
+# Extract some usefull values and save then in txt files
+# Find time of 1/2 left and 1/10 left of max tracer for hippocampus
+tracer_domains = [tracer_hippocampus]
+tracer_domains_names = ["tracer_hippocampus"]
+j = 0
+for tracer in tracer_domains:
+    flag1 = True
+    flag2 = True
 
-    if((y[i]+DOLFIN_EPS)<y[i-1] and flag2):
-        flat_end_value = y[i-1]
-        flat_end_time = x[i-1]
-        flag2 = False
+    one_half_value = 0
+    one_half_time = 0
+    one_tenth_value = 0
+    one_tenth_time = 0
+    for i in range(len(time)):
+        if(tracer[i]/max(tracer) < 1/2 and flag1 and time[i]>600):
+            one_half_value = tracer[i]/max(tracer)
+            one_half_time = time[i]/3600
+            flag1 = False
+
+        if(tracer[i]/max(tracer) < 1/10 and flag2 and time[i]>600):
+            one_half_value = tracer[i]/max(tracer)
+            one_half_time = time[i]/3600
+            flag2 = False
+        
+    with open('values_{}.txt'.format(tracer_domains_names[j]), 'w') as f:
+        f.write('One half value: {}\nOne half time: {}\n\nOne tenth value: {}\nOne tenth time: {}'.format(one_half_value, \
+            one_half_time, one_tenth_value, one_tenth_time))
     
-    if(y[i]/max_tracer < 1/2 and flag3):
-        one_half_value = y[i]
-        one_half_time = x[i]
-        flag3 = False
-
-    if(y[i]/max_tracer < 1/10 and flag4):
-        one_tenth_value = y[i]
-        one_tenth_time = x[i]
-        flag4 = False
-    
-# Save the usefull values
-with open('values_with_hippocampus.txt', 'w') as f:
-    f.write('Flat start value: {}\nFlat start time: {}\n\nFlat end value: {}\nFlat end time: {}\n\nOne half value: {}\nOne half time: {}\n\nOne tenth value: {}\nOne tenth time: {}'.format(flat_start_value, \
-        flat_start_time,flat_end_value,flat_end_time, \
-        one_half_value, one_half_time, one_tenth_value, one_tenth_time))
+    j += 1
 
 
+# Plot the tracer amount for the total domain and hippocampus
+# Change time units to hours and normalize so max tracer amount is 1
+time = time/3600
+tracer_total_scaled = tracer_total/max(tracer_total)
+tracer_hippocampus_scaled = tracer_hippocampus/max(tracer_total)
 
 plt.figure()
-plt.xlabel("Time [s]", fontsize=12)
+plt.xlabel("Time [hours]", fontsize=12)
 plt.ylabel('Amount of tracer [arbitrary units]', fontsize=12)
-plt.plot(x,y)
-plt.savefig("../Figures/tracer_amount_in_hippocapmus_plot.png", bbox_inches='tight')
+plt.plot(time, tracer_total_scaled, label="Total tracer amount")
+# plt.plot(time, tracer_hippocampus_scaled, label="Tracer amount in the hippocampus")
+plt.legend()
+plt.savefig("../Figures/tracer_amount_hippocampus_plot.png", bbox_inches='tight')
 plt.show()
