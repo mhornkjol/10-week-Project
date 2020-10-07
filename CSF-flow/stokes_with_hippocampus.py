@@ -42,8 +42,8 @@ P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 TH = P2 * P1
 W = FunctionSpace(mesh, TH)
 
-# Viscosity inside and outside brain
-mu1 = 7.9*10**(-4)
+# Viscosity in the SAS and brain respectively
+mu1 = 8.0*10**(-4)
 mu2 = 1000*mu1
 
 # No-slip boundary condition for velocity on sides and bottom
