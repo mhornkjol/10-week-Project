@@ -31,8 +31,11 @@ brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
 subdomain = brain - aquaduct - inside
 domain.set_subdomain(1, subdomain)
 mesh = generate_mesh(domain, meshSize)
-plot(mesh)
-plt.savefig("../Figures/mesh.png", bbox_inches='tight')
+
+# plot mesh
+# plot(mesh)
+# plt.savefig("../Figures/mesh.png", bbox_inches='tight', dpi=300)
+# plt.show()
 
 # Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -40,8 +43,8 @@ P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 TH = P2 * P1
 W = FunctionSpace(mesh, TH)
 
-# Viscosity inside and outside brain
-mu1 = 7.9*10**(-4)
+# Viscosity in the SAS and brain respectively
+mu1 = 8.0*10**(-4)
 mu2 = 1000*mu1
 
 # No-slip boundary condition for velocity on sides and bottom
@@ -68,7 +71,7 @@ n = FacetNormal(mesh)
 (u, p) = TrialFunctions(W)
 (v, q) = TestFunctions(W)
 f = Constant((0.0, 0.0))
-a = -mu1*inner(grad(u), grad(v))*dx(0) - mu2*inner(grad(u), grad(v))*dx(1) - mu2*inner(grad(u), grad(v))*dx(2) + div(v)*p*dx + q*div(u)*dx
+a = -mu1*inner(grad(u), grad(v))*dx(0) - mu2*inner(grad(u), grad(v))*dx(1) + div(v)*p*dx + q*div(u)*dx
 L = inner(f, v)*dx
 
 # Form for use in constructing preconditioner matrix
