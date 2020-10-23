@@ -3,6 +3,11 @@ from fenics import *
 from mshr import *
 import matplotlib.pyplot as plt
 
+# Program for calculating the Stokes velocity in a square brain with SAS
+# with a different diffusion coefficient in the brain and SAS
+# Creates a folder for saving the figure and saves the velocity
+# Author: Martin Hornkjøl
+
 # Test for PETSc or Tpetra
 if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Tpetra"):
     info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
@@ -24,18 +29,15 @@ else:
 
 # Create mesh
 meshSize = 64
-domain = Rectangle(Point(0, 0), Point(0.1, 0.1))
+CP = Rectangle(Point(0.04, 0.054), Point(0.06, 0.056))
+domain = Rectangle(Point(0, 0), Point(0.1, 0.1)) - CP
 aquaduct = Rectangle(Point(0.045, 0.01), Point(0.055, 0.045))
-inside = Rectangle(Point(0.04, 0.045), Point(0.06, 0.055))
+inside = Rectangle(Point(0.04, 0.045), Point(0.06, 0.056))
 brain = Rectangle(Point(0.01, 0.01), Point(0.09, 0.09))
 subdomain = brain - aquaduct - inside
 domain.set_subdomain(1, subdomain)
 mesh = generate_mesh(domain, meshSize)
 
-# plot mesh
-# plot(mesh)
-# plt.savefig("../Figures/mesh.png", bbox_inches='tight', dpi=300)
-# plt.show()
 
 # Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -52,11 +54,11 @@ noslip = Constant((0.0, 0.0))
 bc0 = DirichletBC(W.sub(0), noslip, "near(x[0], 0.1) || near(x[0], 0) || near(x[1], 0)")
 
 # Top boundary condition excluding AG
-bc1 = DirichletBC(W.sub(0), noslip, "near(x[1], 0.1) && (x[0] < 0.01 || (0.04 < x[0] && x[0] < 0.065) || 0.085 < x[0])")
+bc1 = DirichletBC(W.sub(0), noslip, "near(x[1], 0.1) && (x[0] < 0.02 || (0.0271 < x[0] && x[0] < 0.065) || 0.0721 < x[0])")
 
 # Inflow from Choroid Plexus
-inflow = Constant((0.0, -0.000003)) # 3 micrometer/s corresponding to 0.5 L/day flow
-bc2 = DirichletBC(W.sub(0), inflow, "near(x[1], 0.055) && (0.04 < x[0] && x[0] < 0.06)")
+inflow = Constant((0.0, -0.000015)) # 15 micrometer/s corresponding to 0.5 L/day flow with CP area 2 cm^2
+bc2 = DirichletBC(W.sub(0), inflow, "near(x[1], 0.054) && (0.04 < x[0] && x[0] < 0.06)")
 
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
