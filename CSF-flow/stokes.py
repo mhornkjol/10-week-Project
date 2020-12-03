@@ -15,7 +15,7 @@ if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("T
 
 if not has_krylov_solver_preconditioner("amg"):
     info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
-         "preconditioner, Hypre or ML.")
+        "preconditioner, Hypre or ML.")
     exit()
 
 if has_krylov_solver_method("minres"):
@@ -24,7 +24,7 @@ elif has_krylov_solver_method("tfqmr"):
     krylov_method = "tfqmr"
 else:
     info("Default linear algebra backend was not compiled with MINRES or TFQMR "
-         "Krylov subspace method. Terminating.")
+        "Krylov subspace method. Terminating.")
     exit()
 
 # Create mesh
@@ -73,7 +73,7 @@ n = FacetNormal(mesh)
 (u, p) = TrialFunctions(W)
 (v, q) = TestFunctions(W)
 f = Constant((0.0, 0.0))
-a = -mu1*inner(grad(u), grad(v))*dx(0) - mu2*inner(grad(u), grad(v))*dx(1) + div(v)*p*dx + q*div(u)*dx
+a = mu1*inner(grad(u), grad(v))*dx(0) + mu2*inner(grad(u), grad(v))*dx(1) + div(v)*p*dx + q*div(u)*dx
 L = inner(f, v)*dx
 
 # Form for use in constructing preconditioner matrix
@@ -95,9 +95,9 @@ solver.set_operators(A, P)
 U = Function(W)
 solver.solve(U.vector(), bb)
 
-
 # Get sub-functions
 u, p = U.split(deepcopy=True)
+
 # Save solution in VTK format
 ufile_pvd = File("Stokes plots/velocity.pvd")
 ufile_pvd << u
@@ -107,3 +107,5 @@ pfile_pvd << p
 # Save velocity
 with XDMFFile(MPI.comm_world, '../diffusion-convection/velocity.xdmf') as xdmf:
     xdmf.write_checkpoint(u, "velocity", 0, append=True)
+
+
